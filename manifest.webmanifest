@@ -1,0 +1,32 @@
+{
+  "name": "개수 늘리기 기록표",
+  "short_name": "개수기록",
+  "description": "주식 개수 늘리기 매매를 폰에 기록하고, 늘어난 개수를 한눈에 봐요.",
+  "lang": "ko",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F7F5FB",
+  "theme_color": "#1F4FF5",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

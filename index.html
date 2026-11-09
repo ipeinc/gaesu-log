@@ -1,0 +1,677 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FBEBF3" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1F1622" media="(prefers-color-scheme: dark)">
+<meta name="description" content="주식 개수 늘리기 매매를 폰에 기록하고, 늘어난 개수를 한눈에 봐요.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="개수기록">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>개수 늘리기 기록표</title>
+<script>
+/* 화이트·다크: 처음엔 폰 설정을 따르고, 고르면 그 선택을 이 폰에 기억한다. 화면을 그리기 전에 적용해 깜빡이지 않게 한다. */
+(function () {
+  var KEY = 'gaesu-theme', BAR = { light: '#FBEBF3', dark: '#1F1622' };
+  var root = document.documentElement, os = window.matchMedia('(prefers-color-scheme: dark)'), chosen = '';
+  try { chosen = localStorage.getItem(KEY) || ''; } catch (e) {}
+  if (chosen !== 'light' && chosen !== 'dark') chosen = '';
+  function now() { return chosen || (os.matches ? 'dark' : 'light'); }
+  function paint() {
+    if (chosen) {
+      root.dataset.theme = chosen;
+      document.querySelectorAll('meta[name="theme-color"]').forEach(function (m) { m.content = BAR[chosen]; });
+    }
+    document.querySelectorAll('[data-theme-set]').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.themeSet === now() ? 'true' : 'false'); });
+  }
+  paint();
+  document.addEventListener('DOMContentLoaded', function () {
+    paint();
+    document.getElementById('themeSwitch').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-theme-set]');
+      if (!b) return;
+      chosen = b.dataset.themeSet;
+      try { localStorage.setItem(KEY, chosen); } catch (e2) {}
+      paint();
+    });
+  });
+  if (os.addEventListener) os.addEventListener('change', paint);
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
+<style>
+/* 폰 한 손 앱: 글자·버튼을 크게. 배당 계산기와 같은 색. 화면은 주소(#) 단위로 바뀌어 폰의 뒤로 가기가 그대로 먹힌다. */
+:root {
+  --bg: #F7F5FB; --wash1: #FBEBF3; --wash2: #F2EFFD; --card: #FFFFFF; --ink: #15151C; --muted: #636575; --line: #E4E2EE;
+  --accent: #1F4FF5; --on-accent: #FFFFFF; --accent-soft: #E8EDFF; --plain: #B4B6C4; --coral: #D93A40; --coral-soft: #FDECEC;
+  --good: #0E7A52; --good-soft: #E3F5EC; --warn-soft: #FFF4D6; --warn: #8A5A00; --shadow: 0 6px 20px rgba(60, 40, 120, .07);
+  --f-hand: "Nanum Pen Script", "Noto Sans KR", cursive;
+  --f-body: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #101016; --wash1: #1F1622; --wash2: #17162B; --card: #1A1A24; --ink: #F1F0F7; --muted: #A9AABA; --line: #2C2B3B;
+    --accent: #7E9CFF; --on-accent: #0D1020; --accent-soft: #1E2647; --plain: #5D5F70; --coral: #FF7A7D; --coral-soft: #351C20;
+    --good: #4CCB94; --good-soft: #13291F; --warn-soft: #33290F; --warn: #F0C466; --shadow: 0 6px 20px rgba(0, 0, 0, .35); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #101016; --wash1: #1F1622; --wash2: #17162B; --card: #1A1A24; --ink: #F1F0F7; --muted: #A9AABA; --line: #2C2B3B;
+  --accent: #7E9CFF; --on-accent: #0D1020; --accent-soft: #1E2647; --plain: #5D5F70; --coral: #FF7A7D; --coral-soft: #351C20;
+  --good: #4CCB94; --good-soft: #13291F; --warn-soft: #33290F; --warn: #F0C466; --shadow: 0 6px 20px rgba(0, 0, 0, .35); color-scheme: dark;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+[hidden] { display: none !important; }
+html { background: var(--bg); }
+body {
+  margin: 0; min-height: 100dvh; color: var(--ink); font-family: var(--f-body); font-size: 18px; line-height: 1.5; word-break: keep-all;
+  background: linear-gradient(180deg, var(--wash1) 0, var(--wash2) 300px, var(--bg) 560px) no-repeat, var(--bg);
+  -webkit-font-smoothing: antialiased; font-variant-numeric: tabular-nums; -webkit-text-size-adjust: 100%;
+}
+button, input, textarea { font-family: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.app {
+  max-width: 520px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px;
+  padding: calc(env(safe-area-inset-top, 0px) + 18px) max(16px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 40px) max(16px, env(safe-area-inset-left, 0px));
+}
+.app.has-dock { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 112px); }
+
+/* 머리 */
+.hero-title h1 { font-family: var(--f-hand); font-weight: 400; font-size: clamp(33px, calc((100vw - 152px) / 5.1), 50px); line-height: 1; margin: 6px 0 6px; }
+.hero-title h1 em { font-style: normal; color: var(--accent); }
+.hero-title p { margin: 0; color: var(--muted); font-size: 16px; }
+.top { display: flex; align-items: center; gap: 4px; min-height: 56px; margin: -6px 0 -4px -10px; }
+.top h1 { flex: 1; min-width: 0; margin: 0; font-size: 26px; font-weight: 900; letter-spacing: -.02em; line-height: 1.25; overflow-wrap: anywhere; }
+.icon-btn { flex: none; width: 56px; height: 56px; display: grid; place-items: center; background: none; border: 0; border-radius: 16px; color: var(--ink); }
+.icon-btn svg { width: 28px; height: 28px; }
+.icon-btn:active { background: var(--accent-soft); }
+.edit-link { flex: none; min-height: 56px; padding: 0 12px; background: none; border: 0; color: var(--accent); font-weight: 700; font-size: 18px; }
+
+/* 카드 공통 */
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 20px; box-shadow: var(--shadow); }
+.section-title { margin: 8px 2px -4px; font-size: 21px; font-weight: 900; letter-spacing: -.01em; }
+.section-sub { margin: 4px 2px -4px; font-size: 16px; color: var(--muted); }
+
+/* 종목 목록 */
+.stock-card { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 112px; text-align: left; font: inherit; }
+.stock-card:active { transform: scale(.985); }
+.stock-card .l { flex: 1; min-width: 0; }
+.stock-card .name { font-size: 24px; font-weight: 900; letter-spacing: -.02em; line-height: 1.3; overflow-wrap: anywhere; }
+.stock-card .qty { margin-top: 2px; font-size: 18px; color: var(--muted); }
+.stock-card .r { flex: none; text-align: right; }
+.stock-card .gain { font-size: 34px; font-weight: 900; letter-spacing: -.02em; line-height: 1.1; white-space: nowrap; }
+.stock-card .gain-sub { font-size: 15px; color: var(--muted); font-weight: 500; white-space: nowrap; }
+.up { color: var(--accent); }
+.down { color: var(--coral); }
+.flat { color: var(--muted); }
+.gain.text { font-size: 19px; font-weight: 700; line-height: 1.3; }
+
+/* 빈 화면 */
+.empty { text-align: center; padding: 32px 20px; }
+.empty b { display: block; font-size: 24px; font-weight: 900; margin-bottom: 8px; }
+.empty p { margin: 0; color: var(--muted); }
+
+/* 큰 버튼 */
+.btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 68px; padding: 12px 18px; border-radius: 20px; border: 2px solid transparent; font-size: 22px; font-weight: 900; letter-spacing: -.01em; }
+.btn:active { transform: scale(.975); }
+.btn.primary { background: var(--accent); color: var(--on-accent); }
+.btn.sell { background: var(--coral); color: var(--on-accent); }
+.btn.ghost { background: var(--card); border-color: var(--line); color: var(--ink); font-size: 19px; font-weight: 700; min-height: 60px; }
+.btn.danger-ghost { background: transparent; border-color: var(--coral); color: var(--coral); font-size: 19px; font-weight: 700; min-height: 60px; }
+.btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.btn-row .btn { min-height: 84px; font-size: 26px; }
+.dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; padding: 14px max(16px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 14px) max(16px, env(safe-area-inset-left, 0px)); background: linear-gradient(180deg, transparent, var(--bg) 34%); }
+.dock .btn { max-width: 488px; margin: 0 auto; box-shadow: 0 10px 24px rgba(31, 79, 245, .28); }
+
+/* 종목 상세: 늘어난 개수 */
+.big { text-align: center; padding: 22px 20px 20px; }
+.big .cap { font-size: 18px; font-weight: 700; color: var(--muted); }
+.big .num { font-size: 76px; font-weight: 900; letter-spacing: -.03em; line-height: 1.08; margin-top: 2px; }
+.big .num small { font-size: 36px; font-weight: 900; margin-left: 2px; letter-spacing: 0; }
+.big .num.text { font-size: 38px; line-height: 1.3; margin-top: 6px; }
+.big .sub { font-size: 18px; color: var(--muted); margin-top: 2px; }
+.bars { display: grid; gap: 12px; margin-top: 20px; text-align: left; }
+.bar-row .top-line { display: flex; justify-content: space-between; align-items: baseline; font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+.bar-row .top-line b { font-size: 22px; font-weight: 900; }
+.bar-track { height: 16px; border-radius: 99px; background: var(--accent-soft); overflow: hidden; }
+.bar-fill { height: 100%; min-width: 4px; border-radius: inherit; background: var(--plain); transition: width .4s ease; }
+.bar-row.now .bar-fill { background: var(--accent); }
+.bar-row.now b { color: var(--accent); }
+.cash { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.cash .t { font-size: 18px; font-weight: 700; }
+.cash .t small { display: block; font-size: 15px; font-weight: 500; color: var(--muted); }
+.cash .v { font-size: 26px; font-weight: 900; letter-spacing: -.02em; white-space: nowrap; }
+
+/* 줄 목록 */
+.rows { padding: 2px 20px; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 68px; padding: 10px 0; border-top: 1px solid var(--line); }
+.row:first-child { border-top: 0; }
+.row .a { font-size: 21px; font-weight: 900; letter-spacing: -.01em; }
+.row .b { font-size: 15.5px; color: var(--muted); }
+.row .q { font-size: 24px; font-weight: 900; white-space: nowrap; }
+.row .r, .lot .r { flex: none; max-width: 62%; text-align: right; }
+.principal { font-size: 15.5px; color: var(--muted); }
+.principal b { font-weight: 700; color: var(--ink); }
+/* 목록이 길어지면 그 칸 안에서만 스크롤. 다음 줄이 반쯤 보이게 높이를 잡아 더 있다는 걸 알 수 있게 한다 */
+.scroll-open, .scroll-logs { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.scroll-open { max-height: 268px; }
+.scroll-logs { max-height: 388px; }
+.scroll-lots { max-height: 318px; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 2px; margin: -2px; }
+.rows.tap { padding: 0; }
+.rows.tap:not(.scroll-logs) { overflow: hidden; }
+.log { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 84px; padding: 12px 18px; background: none; border: 0; border-top: 1px solid var(--line); text-align: left; font: inherit; }
+.log:first-child { border-top: 0; }
+.log:active { background: var(--accent-soft); }
+.tag { flex: none; min-width: 58px; padding: 6px 8px; border-radius: 12px; text-align: center; font-size: 17px; font-weight: 900; }
+.tag.buy { background: var(--accent-soft); color: var(--accent); }
+.tag.sell { background: var(--coral-soft); color: var(--coral); }
+.log .m { flex: 1; min-width: 0; }
+.log .m .a { font-size: 20px; font-weight: 900; letter-spacing: -.01em; }
+.log .m .amt { font-size: 16.5px; color: var(--muted); }
+.log .m .amt b { font-weight: 900; color: var(--ink); }
+.log .m .b { font-size: 15.5px; color: var(--muted); overflow-wrap: anywhere; }
+.log .h { flex: none; text-align: right; font-size: 15px; color: var(--muted); white-space: nowrap; }
+.log .h b { display: block; font-size: 20px; font-weight: 900; color: var(--ink); }
+
+/* 입력 화면 */
+.form { display: grid; gap: 20px; }
+.field label, .field .label { display: block; font-size: 19px; font-weight: 900; margin-bottom: 8px; letter-spacing: -.01em; }
+.field .help { font-size: 15.5px; color: var(--muted); margin: -4px 0 8px; }
+.input-wrap { display: flex; align-items: center; gap: 8px; min-height: 68px; padding: 0 18px; background: var(--card); border: 2px solid var(--line); border-radius: 18px; }
+.input-wrap:focus-within { border-color: var(--accent); }
+.input-wrap input { flex: 1; min-width: 0; width: 100%; height: 64px; border: 0; background: transparent; outline: none; font-size: 26px; font-weight: 900; letter-spacing: -.01em; }
+.input-wrap input::placeholder { color: var(--plain); font-weight: 500; font-size: 20px; }
+.input-wrap input[type="date"] { font-size: 22px; font-weight: 700; }
+.input-wrap input.small { font-size: 20px; font-weight: 500; }
+.input-wrap .unit { flex: none; font-size: 20px; font-weight: 700; color: var(--muted); }
+.field.bad .input-wrap { border-color: var(--coral); }
+.err { color: var(--coral); font-size: 16.5px; font-weight: 700; margin-top: 6px; }
+.lots { display: grid; gap: 10px; }
+.lot { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; min-height: 76px; padding: 10px 18px; text-align: left; font: inherit; background: var(--card); border: 2px solid var(--line); border-radius: 18px; }
+.lot[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.lot .a { font-size: 22px; font-weight: 900; letter-spacing: -.01em; }
+.lot .b { font-size: 15.5px; color: var(--muted); }
+.lot .q { font-size: 23px; font-weight: 900; white-space: nowrap; }
+.quick { display: inline-flex; align-items: center; min-height: 48px; margin-top: 8px; padding: 0 16px; border-radius: 14px; border: 0; background: var(--accent-soft); color: var(--accent); font-size: 17px; font-weight: 700; }
+.total { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px; border-radius: 18px; background: var(--accent-soft); }
+.total .t { font-size: 19px; font-weight: 900; }
+.total .v { font-size: 30px; font-weight: 900; letter-spacing: -.02em; color: var(--accent); overflow-wrap: anywhere; text-align: right; }
+.total.sell { background: var(--coral-soft); }
+.total.sell .v { color: var(--coral); }
+.check { padding: 14px 16px; border-radius: 16px; font-size: 18px; font-weight: 700; line-height: 1.45; }
+.check.ok { background: var(--good-soft); color: var(--good); }
+.check.no { background: var(--warn-soft); color: var(--warn); }
+
+/* 안내 띠 */
+.notice { border-radius: 18px; padding: 14px 16px; font-size: 16.5px; line-height: 1.5; background: var(--accent-soft); }
+.notice b { display: block; font-size: 18px; font-weight: 900; margin-bottom: 2px; }
+.notice.warn { background: var(--warn-soft); color: var(--warn); }
+.notice-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.notice-actions button { min-height: 48px; padding: 0 16px; border-radius: 14px; border: 0; background: var(--accent); color: var(--on-accent); font-size: 17px; font-weight: 700; }
+.notice-actions button.plain { background: transparent; color: var(--muted); }
+.text-link { display: block; width: 100%; min-height: 52px; background: none; border: 0; color: var(--muted); font-size: 17px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.foot { margin: 4px 2px 0; color: var(--muted); font-size: 14px; line-height: 1.55; text-align: center; }
+.prose p { margin: 0 0 10px; }
+.prose p:last-child { margin-bottom: 0; }
+
+/* 확인 창 · 알림 */
+dialog { border: 0; padding: 0; background: transparent; color: var(--ink); width: min(420px, calc(100vw - 32px)); }
+dialog::backdrop { background: rgba(10, 10, 20, .55); }
+.dlg { background: var(--card); border-radius: 24px; padding: 24px 20px 20px; }
+.dlg h2 { margin: 0 0 8px; font-size: 24px; font-weight: 900; letter-spacing: -.02em; line-height: 1.3; }
+.dlg p { margin: 0 0 18px; color: var(--muted); font-size: 17.5px; }
+.dlg .btn-row .btn { min-height: 64px; font-size: 20px; }
+.toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 110px); transform: translateX(-50%); z-index: 20; max-width: calc(100vw - 32px); padding: 14px 20px; border-radius: 16px; background: var(--ink); color: var(--bg); font-size: 17.5px; font-weight: 700; text-align: center; box-shadow: 0 10px 28px rgba(0,0,0,.3); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+:root[data-theme="light"] { color-scheme: light; }
+.theme-switch {
+  position: fixed; z-index: 6; top: calc(env(safe-area-inset-top, 0px) + 12px); right: max(12px, env(safe-area-inset-right, 0px), calc(50vw - 248px));
+  display: inline-flex; gap: 2px; padding: 2px; border: 1px solid var(--line); border-radius: 99px; background: var(--card); box-shadow: var(--shadow);
+}
+.theme-switch button { height: 38px; padding: 0 9px; border: 0; border-radius: 99px; background: transparent; color: var(--muted); font-size: 14.5px; font-weight: 700; cursor: pointer; touch-action: manipulation; }
+.theme-switch button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+</style>
+</head>
+<body>
+
+
+<div class="theme-switch" id="themeSwitch" role="group" aria-label="화면 모드">
+  <button type="button" data-theme-set="light">화이트</button>
+  <button type="button" data-theme-set="dark">다크</button>
+</div>
+<main class="app" id="app"></main>
+<dialog id="dlg"></dialog>
+<input type="file" id="restoreFile" accept="application/json,.json" hidden>
+
+<script>
+'use strict';
+/* 기록은 이 폰의 브라우저 저장소(localStorage)에만 둔다. 서버로 보내지 않는다. */
+const KEY = 'gaesu-record-v1', NOTE_KEY = 'gaesu-install-note-off';
+const $ = id => document.getElementById(id);
+const app = $('app');
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const round4 = v => Math.round(v * 10000) / 10000;
+const num = v => new Intl.NumberFormat('ko-KR', { maximumFractionDigits: 4 }).format(v);
+const won = v => num(Math.round(v * 100) / 100) + '원';
+const signed = v => (v > 0 ? '+' : v < 0 ? '−' : '') + num(Math.abs(v));
+const pct = v => (v > 0 ? '+' : v < 0 ? '−' : '') + (Math.abs(v) * 100).toFixed(1) + '%';
+const parseNum = s => { const v = parseFloat(String(s == null ? '' : s).replace(/,/g, '')); return isFinite(v) ? v : NaN; };
+const today = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+const shortDate = s => { const p = s.split('-'); return (p[0] === String(new Date().getFullYear()) ? '' : p[0] + '년 ') + (+p[1]) + '월 ' + (+p[2]) + '일'; };
+const iconBack = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
+
+/* ── 저장 ── */
+let db = load();
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem(KEY));
+    if (d && Array.isArray(d.stocks)) return d;
+  } catch (e) {}
+  return { stocks: [] };
+}
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(db)); return true; }
+  catch (e) { toast('저장하지 못했어요. 브라우저의 비공개 모드인지 확인해 주세요.'); return false; }
+}
+function askKeep() { try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {} }
+window.addEventListener('storage', e => { if (e.key === KEY) { db = load(); render(); } });
+
+/* ── 계산: 처음 보유분과 매수 한 번 한 번을 '물량'으로 보고, 매도는 어느 물량을 팔았는지 적는다 ── */
+const stockById = id => db.stocks.find(s => s.id === id);
+const ordered = s => s.trades.map((t, i) => [t, i]).sort((a, b) => a[0].date.localeCompare(b[0].date) || a[1] - b[1]).map(x => x[0]);
+function calc(s) {
+  const lots = [];
+  if (s.startQty > 0) lots.push({ id: 'start', name: '처음 보유분', price: s.startPrice, qty: s.startQty, left: s.startQty });
+  s.trades.filter(t => t.type === 'buy').sort((a, b) => a.date.localeCompare(b.date)).forEach(t => lots.push({ id: t.id, name: shortDate(t.date) + ' 매수', price: t.price, qty: t.qty, left: t.qty }));
+  const lotOf = id => lots.find(l => l.id === id);
+  let qty = s.startQty, cash = 0;
+  const logs = ordered(s).map(t => {
+    const r = { t };
+    if (t.type === 'buy') { qty += t.qty; cash -= t.price * t.qty; }
+    else {
+      qty -= t.qty; cash += t.price * t.qty;
+      const l = lotOf(t.lot);
+      if (l) { l.left = round4(l.left - t.qty); r.lot = l; }
+    }
+    r.after = round4(qty);
+    return r;
+  });
+  qty = round4(qty);
+  return { qty, cash: Math.round(cash * 100) / 100, diff: round4(qty - s.startQty), rate: s.startQty ? (qty - s.startQty) / s.startQty : null, lots, open: lots.filter(l => l.left > 0), logs };
+}
+/* 판 돈을 아직 현금으로 들고 있으면 개수가 잠시 줄어든 것일 뿐이라 '−20주'로 겁주지 않는다 */
+function gainView(c) {
+  if (c.diff > 0) return { cls: 'up', text: signed(c.diff) + '주', isText: false };
+  if (c.diff < 0 && c.cash > 0) return { cls: 'flat', text: '현금 보유 중', isText: true };
+  if (c.diff < 0) return { cls: 'down', text: signed(c.diff) + '주', isText: false };
+  return { cls: 'flat', text: '0주', isText: false };
+}
+
+/* ── 화면 이동 ── */
+let openedInApp = false;
+function go(hash) { openedInApp = true; location.hash = hash; }
+function finish(fallback) {           // 입력 화면을 닫고 앞 화면으로
+  if (openedInApp) { openedInApp = false; history.back(); }
+  else location.replace(fallback);
+}
+function route() { return (location.hash || '#/').replace(/^#\/?/, '').split('/').filter(Boolean); }
+function render() {
+  const r = route();
+  app.classList.remove('has-dock');
+  document.getElementById('themeSwitch').hidden = r.length > 0;   // 전환 버튼은 메인 화면에만
+  if (!r.length) return viewHome();
+  if (r[0] === 'add') return viewStockForm(null);
+  if (r[0] === 'backup') return viewBackup();
+  const s = r[0] === 's' && stockById(r[1]);
+  if (!s) return location.replace('#/');
+  if (!r[2]) return viewStock(s);
+  if (r[2] === 'edit') return viewStockForm(s);
+  if (r[2] === 'buy' || r[2] === 'sell') return viewTrade(s, r[2], null);
+  if (r[2] === 't') { const t = s.trades.find(x => x.id === r[3]); return t ? viewTrade(s, t.type, t) : location.replace('#/s/' + s.id); }
+  location.replace('#/');
+}
+window.addEventListener('hashchange', () => { render(); window.scrollTo(0, 0); });
+const topBar = (title, back, right) => `<div class="top"><button class="icon-btn" data-back="${back}" aria-label="뒤로">${iconBack}</button><h1>${esc(title)}</h1>${right || ''}</div>`;
+
+/* ── 홈: 내 종목 ── */
+function viewHome() {
+  app.classList.add('has-dock');
+  const cards = db.stocks.map(s => {
+    const c = calc(s), g = gainView(c);
+    return `<button class="card stock-card" data-go="#/s/${s.id}">
+      <div class="l"><div class="name">${esc(s.name)}</div><div class="qty">지금 ${num(c.qty)}주</div></div>
+      <div class="r"><div class="gain ${g.cls}${g.isText ? ' text' : ''}">${g.text}</div>${c.rate !== null && c.diff > 0 ? `<div class="gain-sub">${pct(c.rate)}</div>` : ''}</div>
+    </button>`;
+  }).join('');
+  app.innerHTML = `
+    <header class="hero-title"><h1>개수 늘리기 <em>기록표</em></h1><p>입력한 기록은 이 폰에만 저장돼요.</p></header>
+    ${installNotice()}
+    ${cards || `<div class="card empty"><b>아직 종목이 없어요</b><p>아래 버튼으로 첫 종목을 넣어 보세요.</p></div>`}
+    <button class="text-link" data-go="#/backup">기록 백업하기</button>
+    <p class="foot">개인 기록용 도구입니다. 특정 종목의 매수·매도를 권유하지 않으며, 투자 판단과 결과의 책임은 본인에게 있습니다.</p>
+    <div class="dock"><button class="btn primary" data-go="#/add">＋ 종목 넣기</button></div>`;
+  bindInstall();
+}
+
+/* ── 종목 상세 ── */
+function viewStock(s) {
+  const c = calc(s), g = gainView(c), max = Math.max(s.startQty, c.qty, 1);
+  const cashRow = c.cash >= 0
+    ? `<div class="t">다시 살 돈<small>판 돈에서 다시 사고 남은 현금</small></div><div class="v">${won(c.cash)}</div>`
+    : `<div class="t">추가로 넣은 돈<small>판 돈보다 더 많이 산 금액</small></div><div class="v">${won(-c.cash)}</div>`;
+  const opens = c.open.map(l => `<div class="row"><div><div class="a">${won(l.price)}</div><div class="b">${esc(l.name)}</div></div><div class="r"><div class="q">${num(l.left)}주</div><div class="principal">투자원금 <b>${won(l.price * l.left)}</b></div></div></div>`).join('');
+  const logs = c.logs.slice().reverse().map(r => {
+    const t = r.t, p = r.lot && r.lot.price ? t.price / r.lot.price - 1 : null;
+    const sub = shortDate(t.date) + (p !== null ? ' · 산 가격보다 ' + pct(p) : '') + (t.memo ? ' · ' + t.memo : '');
+    return `<button class="log" data-go="#/s/${s.id}/t/${t.id}" aria-label="기록 고치기">
+      <span class="tag ${t.type}">${t.type === 'buy' ? '매수' : '매도'}</span>
+      <span class="m"><div class="a">${won(t.price)} × ${num(t.qty)}주</div><div class="amt">${t.type === 'buy' ? '매수원금' : '매도금'} <b>${won(t.price * t.qty)}</b></div><div class="b">${esc(sub)}</div></span>
+      <span class="h">보유<b>${num(r.after)}주</b></span>
+    </button>`;
+  }).join('');
+  app.innerHTML = `
+    ${topBar(s.name, '#/', `<button class="edit-link" data-go="#/s/${s.id}/edit">수정</button>`)}
+    <section class="card big">
+      <div class="cap">늘어난 개수</div>
+      <div class="num ${g.cls}${g.isText ? ' text' : ''}">${g.isText ? g.text : g.text.replace('주', '') + '<small>주</small>'}</div>
+      ${c.rate !== null && c.diff > 0 ? `<div class="sub">처음보다 ${pct(c.rate)}</div>` : (g.isText ? '<div class="sub">다시 사면 개수가 늘어나요</div>' : '')}
+      <div class="bars">
+        <div class="bar-row"><div class="top-line"><span>처음</span><b>${num(s.startQty)}주</b></div><div class="bar-track"><div class="bar-fill" style="width:${s.startQty / max * 100}%"></div></div></div>
+        <div class="bar-row now"><div class="top-line"><span>지금</span><b>${num(c.qty)}주</b></div><div class="bar-track"><div class="bar-fill" style="width:${c.qty / max * 100}%"></div></div></div>
+      </div>
+    </section>
+    <div class="btn-row">
+      <button class="btn primary" data-go="#/s/${s.id}/buy">샀어요</button>
+      <button class="btn sell" data-go="#/s/${s.id}/sell">팔았어요</button>
+    </div>
+    <section class="card cash">${cashRow}</section>
+    ${opens ? `<h2 class="section-title">아직 안 판 물량</h2><section class="card rows scroll-open">${opens}</section>` : ''}
+    <h2 class="section-title">매매 기록</h2>
+    ${logs ? `<p class="section-sub">눌러서 고치거나 지울 수 있어요.</p><section class="card rows tap scroll-logs">${logs}</section>` : `<div class="card empty"><p>샀거나 팔았을 때 위 버튼을 눌러 주세요.</p></div>`}`;
+}
+
+/* ── 종목 넣기 · 수정 ── */
+function viewStockForm(s) {
+  const back = s ? '#/s/' + s.id : '#/';
+  app.innerHTML = `
+    ${topBar(s ? '종목 수정' : '종목 넣기', back)}
+    <div class="form">
+      <div class="field" id="f-name"><label for="name">종목 이름</label>
+        <div class="input-wrap"><input id="name" type="text" maxlength="30" autocomplete="off" placeholder="내가 부를 이름" value="${s ? esc(s.name) : ''}"></div></div>
+      <div class="field" id="f-qty"><label for="startQty">지금 몇 주 갖고 있나요?</label>
+        <p class="help">기록을 시작하는 지금의 개수예요. 없으면 0.</p>
+        <div class="input-wrap"><input id="startQty" class="num-in" inputmode="decimal" autocomplete="off" placeholder="0" value="${s ? num(s.startQty) : ''}"><span class="unit">주</span></div></div>
+      <div class="field" id="f-price"><label for="startPrice">평균 얼마에 샀나요?</label>
+        <div class="input-wrap"><input id="startPrice" class="num-in" inputmode="decimal" autocomplete="off" placeholder="한 주 가격" value="${s && s.startPrice ? num(s.startPrice) : ''}"><span class="unit">원</span></div></div>
+      <button class="btn primary" id="saveStock">저장</button>
+      ${s ? `<button class="btn danger-ghost" id="delStock">이 종목 지우기</button>` : ''}
+    </div>`;
+  $('saveStock').onclick = () => {
+    clearErrs();
+    const name = $('name').value.trim(), q = $('startQty').value.trim() === '' ? 0 : parseNum($('startQty').value), p = parseNum($('startPrice').value);
+    let ok = true;
+    if (!name) ok = fieldErr('f-name', '종목 이름을 적어 주세요.');
+    if (!(q >= 0)) ok = fieldErr('f-qty', '개수를 숫자로 적어 주세요.');
+    if (q > 0 && !(p > 0)) ok = fieldErr('f-price', '평균 매수가를 적어 주세요.');
+    if (!ok) return;
+    if (s) {
+      const sold = s.trades.filter(t => t.type === 'sell' && t.lot === 'start').reduce((a, t) => a + t.qty, 0);
+      if (q < sold) return fieldErr('f-qty', `처음 보유분을 이미 ${num(sold)}주 판 기록이 있어요. ${num(sold)}주보다 적게 할 수 없어요.`);
+      s.name = name; s.startQty = round4(q); s.startPrice = q > 0 ? p : 0;
+      if (save()) finish(back);
+    } else {
+      const n = { id: uid(), name, startQty: round4(q), startPrice: q > 0 ? p : 0, trades: [] };
+      db.stocks.push(n);
+      if (save()) { askKeep(); location.replace('#/s/' + n.id); }
+    }
+  };
+  if (s) $('delStock').onclick = async () => {
+    if (await ask(`'${s.name}'을(를) 지울까요?`, '이 종목의 매매 기록이 모두 사라지고 되돌릴 수 없어요.', '지우기')) {
+      db.stocks = db.stocks.filter(x => x.id !== s.id);
+      if (save()) { openedInApp = false; location.replace('#/'); toast('종목을 지웠어요.'); }
+    }
+  };
+  bindNumInputs();
+}
+
+/* ── 샀어요 · 팔았어요 ── */
+function viewTrade(s, type, t) {
+  const back = '#/s/' + s.id, isSell = type === 'sell', c = calc(s);
+  let lots = c.lots.map(l => ({ ...l, avail: round4(l.left + (t && t.lot === l.id ? t.qty : 0)) })).filter(l => l.avail > 0 || (t && t.lot === l.id));
+  let lotId = t ? t.lot : (lots.length === 1 ? lots[0].id : null);
+  const lotRows = () => lots.map(l => `<button type="button" class="lot" data-lot="${l.id}" aria-pressed="${l.id === lotId}"><span><div class="a">${won(l.price)}</div><div class="b">${esc(l.name)}</div></span><span class="r"><div class="q">${num(l.avail)}주</div><div class="principal">투자원금 <b>${won(l.price * l.avail)}</b></div></span></button>`).join('');
+  if (isSell && !lots.length) {
+    app.innerHTML = `${topBar('팔았어요', back)}<div class="card empty"><b>팔 수 있는 물량이 없어요</b><p>먼저 '샀어요'로 산 기록을 넣어 주세요.</p></div>`;
+    return;
+  }
+  const cashNow = round4(c.cash + (t && !isSell ? t.price * t.qty : 0));
+  app.innerHTML = `
+    ${topBar((t ? '기록 고치기 · ' : '') + (isSell ? '팔았어요' : '샀어요'), back)}
+    <div class="form">
+      ${isSell ? `<div class="field" id="f-lot"><div class="label">어느 물량을 팔았나요?</div><div class="lots scroll-lots" id="lots">${lotRows()}</div></div>` : ''}
+      <div class="field" id="f-price"><label for="price">${isSell ? '판' : '산'} 가격 (한 주)</label>
+        <div class="input-wrap"><input id="price" class="num-in" inputmode="decimal" autocomplete="off" placeholder="0" value="${t ? num(t.price) : ''}"><span class="unit">원</span></div></div>
+      <div class="field" id="f-qty"><label for="qty">${isSell ? '판' : '산'} 개수</label>
+        <div class="input-wrap"><input id="qty" class="num-in" inputmode="decimal" autocomplete="off" placeholder="0" value="${t ? num(t.qty) : ''}"><span class="unit">주</span></div>
+        <div id="quickBox"></div></div>
+      <div id="total" aria-live="polite" hidden></div>
+      <div id="check" aria-live="polite"></div>
+      <div class="field" id="f-date"><label for="date">날짜</label>
+        <div class="input-wrap"><input id="date" type="date" value="${t ? t.date : today()}" max="9999-12-31"></div></div>
+      <div class="field"><label for="memo">메모 (안 적어도 돼요)</label>
+        <div class="input-wrap"><input id="memo" class="small" type="text" maxlength="60" autocomplete="off" placeholder="예) 배당 재투자" value="${t ? esc(t.memo || '') : ''}"></div></div>
+      <button class="btn ${isSell ? 'sell' : 'primary'}" id="saveTrade">저장</button>
+      ${t ? `<button class="btn danger-ghost" id="delTrade">이 기록 지우기</button>` : ''}
+    </div>`;
+
+  const lotNow = () => lots.find(l => l.id === lotId);
+  const lastSellBefore = date => {           // 이 날짜까지의 가장 최근 매도가
+    const list = ordered(s).filter(x => x.type === 'sell' && x.date <= date && (!t || x.id !== t.id));
+    return list.length ? list[list.length - 1].price : null;
+  };
+  function updateTotal() {                   // 가격 × 개수를 입력하는 동안 바로 보여 준다
+    const p = parseNum($('price').value), q = parseNum($('qty').value), el = $('total');
+    el.hidden = !(p > 0 && q > 0);
+    el.className = 'total' + (isSell ? ' sell' : '');
+    el.innerHTML = el.hidden ? '' : `<span class="t">${isSell ? '판 금액' : '투자금'}</span><span class="v">${won(p * q)}</span>`;
+  }
+  function update() {
+    updateTotal();
+    const p = parseNum($('price').value), box = $('check'), quick = $('quickBox');
+    box.innerHTML = '';
+    if (isSell) {
+      const l = lotNow();
+      quick.innerHTML = l ? `<button type="button" class="quick" data-fill="${l.avail}">${num(l.avail)}주 전부</button>` : '';
+      if (l && p > 0 && l.price > 0) {
+        const d = p / l.price - 1;
+        box.innerHTML = d > 0 ? `<div class="check ok">산 가격보다 ${pct(d)} 비싸게 팔았어요.</div>`
+                              : `<div class="check no">산 가격보다 비싸게 팔지 않았어요. 개수가 줄어들 수 있어요.</div>`;
+      }
+    } else {
+      const can = p > 0 && cashNow > 0 ? Math.floor(cashNow / p) : 0;
+      quick.innerHTML = can > 0 ? `<button type="button" class="quick" data-fill="${can}">다시 살 돈으로 ${num(can)}주 살 수 있어요</button>` : '';
+      const last = lastSellBefore($('date').value);
+      if (last && p > 0) {
+        const d = p / last - 1;
+        box.innerHTML = d < 0 ? `<div class="check ok">직전에 판 가격보다 ${pct(d).replace('−', '')} 싸게 샀어요.</div>`
+                              : `<div class="check no">직전에 판 가격(${won(last)})보다 싸게 사지 않았어요. 개수가 줄어들 수 있어요.</div>`;
+      }
+    }
+  }
+  update();
+  if (isSell && lotId) {                     // 고치기 화면: 골라 둔 물량이 목록 안에 보이게
+    const box = $('lots'), el = box.querySelector('[aria-pressed="true"]');
+    if (el) box.scrollTop = el.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop - 8;
+  }
+  app.oninput = e => { if (e.target.matches('#price, #date')) update(); else if (e.target.matches('#qty')) updateTotal(); };
+  app.onchange = e => { if (e.target.matches('#date')) update(); };
+  if (isSell) $('lots').addEventListener('click', e => {
+    const b = e.target.closest('[data-lot]'); if (!b) return;
+    lotId = b.dataset.lot;
+    $('lots').querySelectorAll('[data-lot]').forEach(x => x.setAttribute('aria-pressed', x.dataset.lot === lotId));  // 다시 그리지 않아 스크롤 위치가 그대로
+    $('f-lot').classList.remove('bad');
+    const er = $('f-lot').querySelector('.err'); if (er) er.remove();
+    update();
+  });
+  $('quickBox').addEventListener('click', e => {
+    const b = e.target.closest('[data-fill]');
+    if (b) { $('qty').value = num(parseFloat(b.dataset.fill)); updateTotal(); }
+  });
+  $('saveTrade').onclick = () => {
+    clearErrs();
+    const price = parseNum($('price').value), qty = parseNum($('qty').value), date = $('date').value;
+    let ok = true;
+    if (isSell && !lotNow()) ok = fieldErr('f-lot', '판 물량을 골라 주세요.');
+    if (!(price > 0)) ok = fieldErr('f-price', '가격을 적어 주세요.');
+    if (!(qty > 0)) ok = fieldErr('f-qty', '개수를 적어 주세요.');
+    if (!date) ok = fieldErr('f-date', '날짜를 골라 주세요.');
+    if (ok && isSell && qty > lotNow().avail) ok = fieldErr('f-qty', `이 물량은 ${num(lotNow().avail)}주까지 팔 수 있어요.`);
+    if (ok && !isSell && t) {
+      const sold = s.trades.filter(x => x.type === 'sell' && x.lot === t.id).reduce((a, x) => a + x.qty, 0);
+      if (qty < sold) ok = fieldErr('f-qty', `이 물량을 이미 ${num(sold)}주 판 기록이 있어요. ${num(sold)}주보다 적게 할 수 없어요.`);
+    }
+    if (!ok) { const bad = document.querySelector('.field.bad'); if (bad) bad.scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
+    const data = { type, date, price, qty: round4(qty), memo: $('memo').value.trim() };
+    if (isSell) data.lot = lotId;
+    if (t) Object.assign(t, data); else s.trades.push({ id: uid(), ...data });
+    if (save()) { askKeep(); finish(back); }
+  };
+  if (t) $('delTrade').onclick = async () => {
+    if (!isSell && s.trades.some(x => x.type === 'sell' && x.lot === t.id)) {
+      await ask('아직 지울 수 없어요', '이 물량을 판 기록이 있어요. 판 기록을 먼저 지워 주세요.', null);
+      return;
+    }
+    if (await ask('이 기록을 지울까요?', '지우면 되돌릴 수 없어요.', '지우기')) {
+      s.trades = s.trades.filter(x => x.id !== t.id);
+      if (save()) finish(back);
+    }
+  };
+  bindNumInputs();
+}
+
+/* ── 백업 ── */
+function viewBackup() {
+  app.innerHTML = `
+    ${topBar('기록 백업', '#/')}
+    <section class="card prose">
+      <p>기록은 이 폰 안에만 있어요. 앱을 지우거나 브라우저 데이터를 지우면 기록도 사라져요.</p>
+      <p>가끔 백업 파일을 저장해 두면, 폰을 바꿔도 그대로 이어서 쓸 수 있어요.</p>
+    </section>
+    <button class="btn primary" id="doBackup">백업 파일 저장</button>
+    <button class="btn ghost" id="doRestore">백업 파일 불러오기</button>`;
+  $('doBackup').onclick = backup;
+  $('doRestore').onclick = () => $('restoreFile').click();
+}
+async function backup() {
+  const name = '개수기록_백업_' + today().replace(/-/g, '') + '.json';
+  const blob = new Blob([JSON.stringify(db, null, 1)], { type: 'application/json' });
+  try {
+    const file = new File([blob], name, { type: 'application/json' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file] }); return; }
+  } catch (e) { if (e && e.name === 'AbortError') return; }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  toast('백업 파일을 저장했어요.');
+}
+$('restoreFile').addEventListener('change', async e => {
+  const f = e.target.files[0]; e.target.value = '';
+  if (!f) return;
+  let d;
+  try {
+    d = JSON.parse(await f.text());
+    if (!d || !Array.isArray(d.stocks) || !d.stocks.every(s => s.id && typeof s.name === 'string' && Array.isArray(s.trades))) throw 0;
+  } catch (x) { toast('백업 파일이 아니에요. 파일을 확인해 주세요.'); return; }
+  if (await ask('백업을 불러올까요?', `지금 기록이 백업 파일의 ${d.stocks.length}개 종목으로 바뀌어요.`, '불러오기')) {
+    db = d;
+    if (save()) { askKeep(); location.replace('#/'); toast('기록을 불러왔어요.'); }
+  }
+});
+
+/* ── 홈 화면 추가 안내 ── */
+let installEvt = null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; if (!route().length) render(); });
+const isStandalone = () => (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+const ua = navigator.userAgent;
+const isIOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const isInApp = /Instagram|FBAN|FBAV|KAKAOTALK|NAVER\(|Line\//i.test(ua);
+function noteOff() { try { return localStorage.getItem(NOTE_KEY) === '1'; } catch (e) { return false; } }
+function installNotice() {
+  if (isStandalone()) return '';
+  if (isInApp) return `<div class="notice warn"><b>지금은 앱 안의 브라우저예요</b>여기에 적으면 기록이 사라질 수 있어요. 메뉴(⋯)에서 ${isIOS ? 'Safari' : 'Chrome'}로 열어 주세요.</div>`;
+  if (noteOff()) return '';
+  const how = isIOS ? 'Safari 아래쪽 공유 버튼 → <b style="display:inline;font-size:inherit">홈 화면에 추가</b>를 눌러 주세요. 그 뒤 홈 화면 아이콘으로 열어서 적어 주세요.'
+                    : (installEvt ? '폰에 앱처럼 설치하면 아이콘 하나로 바로 열려요.' : '브라우저 메뉴(⋮) → <b style="display:inline;font-size:inherit">홈 화면에 추가</b>를 눌러 주세요.');
+  return `<div class="notice"><b>먼저 홈 화면에 추가하세요</b>${how} 기록도 더 안전하게 남아요.
+    <div class="notice-actions">${installEvt ? '<button id="doInstall">앱으로 설치</button>' : ''}<button class="plain" id="noteClose">닫기</button></div></div>`;
+}
+function bindInstall() {
+  const a = $('doInstall'), c = $('noteClose');
+  if (a) a.onclick = async () => { installEvt.prompt(); await installEvt.userChoice; installEvt = null; render(); };
+  if (c) c.onclick = () => { try { localStorage.setItem(NOTE_KEY, '1'); } catch (e) {} render(); };
+}
+
+/* ── 공통 도구 ── */
+function fieldErr(id, msg) {
+  const f = $(id); f.classList.add('bad');
+  const e = document.createElement('div'); e.className = 'err'; e.setAttribute('role', 'alert'); e.textContent = msg; f.appendChild(e);
+  return false;
+}
+function clearErrs() { document.querySelectorAll('.field.bad').forEach(f => f.classList.remove('bad')); document.querySelectorAll('.err').forEach(e => e.remove()); }
+function bindNumInputs() {                  // 입력하는 동안 1,000 단위로 쉼표
+  document.querySelectorAll('.num-in').forEach(el => {
+    el.addEventListener('input', () => {
+      const raw = el.value.replace(/[^\d.]/g, ''), dot = raw.indexOf('.');
+      const i = (dot < 0 ? raw : raw.slice(0, dot)).replace(/^0+(?=\d)/, ''), d = dot < 0 ? '' : '.' + raw.slice(dot + 1).replace(/\./g, '').slice(0, 4);
+      el.value = (i ? i.replace(/\B(?=(\d{3})+(?!\d))/g, ',') : (dot < 0 ? '' : '0')) + d;
+    });
+  });
+}
+function ask(title, msg, okLabel) {          // okLabel이 없으면 확인 버튼 하나
+  const d = $('dlg');
+  d.innerHTML = `<div class="dlg"><h2>${esc(title)}</h2><p>${esc(msg)}</p>${okLabel
+    ? `<div class="btn-row"><button class="btn ghost" data-v="0">취소</button><button class="btn sell" data-v="1">${esc(okLabel)}</button></div>`
+    : `<button class="btn primary" data-v="0">확인</button>`}</div>`;
+  return new Promise(res => {
+    const done = v => { d.close(); d.onclick = null; d.oncancel = null; res(v); };
+    d.onclick = e => { const b = e.target.closest('[data-v]'); if (b) done(b.dataset.v === '1'); };
+    d.oncancel = e => { e.preventDefault(); done(false); };
+    d.showModal();
+  });
+}
+let toastT;
+function toast(msg) {
+  let el = document.querySelector('.toast');
+  if (!el) { el = document.createElement('div'); el.className = 'toast'; el.setAttribute('role', 'status'); document.body.appendChild(el); }
+  el.textContent = msg; clearTimeout(toastT);
+  toastT = setTimeout(() => el.remove(), 2400);
+}
+document.addEventListener('input', e => {   // 고치기 시작하면 그 칸의 오류 글자는 바로 지운다
+  const f = e.target.closest('.field.bad');
+  if (f) { f.classList.remove('bad'); const er = f.querySelector('.err'); if (er) er.remove(); }
+});
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-go]');
+  if (b) return go(b.dataset.go);
+  const k = e.target.closest('[data-back]');
+  if (k) return finish(k.dataset.back);
+});
+render();
+</script>
+
+<script>
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js?v=5').catch(function () {}); });
+}
+</script>
+</body>
+</html>
